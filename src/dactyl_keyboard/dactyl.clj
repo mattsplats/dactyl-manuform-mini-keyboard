@@ -479,7 +479,7 @@
   (hull p (bottom 0.001 p)))
 
 (def left-wall-x-offset 5) ; original 10
-(def left-wall-z-offset  3) ; original 3
+(def left-wall-z-offset 3) ; original 3
 
 (defn left-key-position [row direction]
   (map - (key-position 0 row [(* mount-width -0.5) (* direction mount-height 0.5) 0]) [left-wall-x-offset 0 left-wall-z-offset]))
