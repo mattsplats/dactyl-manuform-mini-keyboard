@@ -596,7 +596,18 @@
 (def usb-holder-space  (translate (map + usb-holder-position [0 (* -1 wall-thickness) 1]) usb-holder-cube))
 (def usb-holder-holder (translate usb-holder-position (cube 19 12 4)))
 
-(def usb-jack (translate (map + usb-holder-position [0 10 3]) (cube 8.1 20 3.1)))
+(def usb-jack
+    (let [  wall-displacement 20
+            edge-curve (rotate (deg2rad 90) [1 0 0] (binding [*fn* 30] (cylinder 1 wall-displacement)))
+            horiz-shift 3.6
+            vertl-shift 0.6]
+        (translate (map + usb-holder-position [0 10 3]) (union
+            (cube 7.2 wall-displacement 3.2)
+            (cube 9.2 wall-displacement 1)
+            (translate [horiz-shift     0 vertl-shift    ] edge-curve)
+            (translate [horiz-shift     0 (- vertl-shift)] edge-curve)
+            (translate [(- horiz-shift) 0 vertl-shift    ] edge-curve)
+            (translate [(- horiz-shift) 0 (- vertl-shift)] edge-curve)))))
 
 (def pro-micro-position (map + (key-position 0 1 (wall-locate3 -1 0)) [-6 2 -15]))
 (def pro-micro-space-size [4 10 12]) ; z has no wall;
