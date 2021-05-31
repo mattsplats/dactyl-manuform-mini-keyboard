@@ -76,7 +76,7 @@
 
 (def plate-thickness 2)
 (def side-nub-thickness 4)
-(def retention-tab-thickness 1.5)
+(def retention-tab-thickness 1.15)
 (def retention-tab-hole-thickness (- plate-thickness retention-tab-thickness))
 (def mount-width (+ keyswitch-width 3))
 (def mount-height (+ keyswitch-height 3))
