@@ -591,10 +591,10 @@
 
 (def usb-holder-ref (key-position 0 0 (map - (wall-locate2  0  -1) [0 (/ mount-height 2) 0])))
 
-(def usb-holder-position (map + [17 19.3 0] [(first usb-holder-ref) (second usb-holder-ref) 2]))
-(def usb-holder-cube   (cube 15 12 2))
+(def usb-holder-position (map + [22 17 0] [(first usb-holder-ref) (second usb-holder-ref) 2]))
+(def usb-holder-cube   (cube 10 12 3))
 (def usb-holder-space  (translate (map + usb-holder-position [0 (* -1 wall-thickness) 1]) usb-holder-cube))
-(def usb-holder-holder (translate usb-holder-position (cube 19 12 4)))
+(def usb-holder-holder (translate usb-holder-position (cube 19 12 4.5)))
 
 (def usb-jack
     (let [  wall-displacement 20
@@ -609,7 +609,7 @@
             (translate [(- horiz-shift) 0 vertl-shift    ] edge-curve)
             (translate [(- horiz-shift) 0 (- vertl-shift)] edge-curve)))))
 
-(def pro-micro-position (map + (key-position 0 1 (wall-locate3 -1 0)) [-6 2 -15]))
+(def pro-micro-position (map + (key-position 0 1 (wall-locate3 -1 0)) [-4 2 -15]))
 (def pro-micro-space-size [4 10 12]) ; z has no wall;
 (def pro-micro-wall-thickness 2)
 (def pro-micro-holder-size [(+ pro-micro-wall-thickness (first pro-micro-space-size)) (+ pro-micro-wall-thickness (second pro-micro-space-size)) (last pro-micro-space-size)])
