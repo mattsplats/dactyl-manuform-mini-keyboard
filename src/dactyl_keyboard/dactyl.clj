@@ -643,13 +643,13 @@
   ; rectangular trrs holder
    (->> (apply cube trrs-holder-hole-size) (translate [(first trrs-holder-position) (+ (/ trrs-holder-thickness -2) (second trrs-holder-position)) (+ (/ (last trrs-holder-hole-size) 2) trrs-holder-thickness)]))))
 
-(defn screw-insert-shape [bottom-radius top-radius height]
+(defn screw-insert-shape [bottom-radius top-radius height with-cap]
   (union
    (->> (binding [*fn* 30]
           (cylinder [bottom-radius top-radius] height)))
-   (translate [0 0 (/ height 2)] (->> (binding [*fn* 30] (sphere top-radius))))))
+   (if with-cap (translate [0 0 (/ height 2)] (->> (binding [*fn* 30] (sphere top-radius)))))))
 
-(defn screw-insert [column row bottom-radius top-radius height offset]
+(defn screw-insert [column row bottom-radius top-radius height offset with-cap]
   (let [shift-right   (= column lastcol)
         shift-left    (= column 0)
         shift-up      (and (not (or shift-right shift-left)) (= row 0))
@@ -658,17 +658,17 @@
                           (if shift-down  (key-position column row (map - (wall-locate2  0 -1) [0 (/ mount-height 2) 0]))
                               (if shift-left (map + (left-key-position row 0) (wall-locate3 -1 0))
                                   (key-position column row (map + (wall-locate2  1  0) [(/ mount-width 2) 0 0])))))]
-    (->> (screw-insert-shape bottom-radius top-radius height)
+    (->> (screw-insert-shape bottom-radius top-radius height with-cap)
          (translate (map + offset [(first position) (second position) (/ height 2)])))))
 
-(defn screw-insert-all-shapes [bottom-radius top-radius height]
-  (union (screw-insert 0 0         bottom-radius top-radius height [6 8 0])
-         (screw-insert 0 lastrow   bottom-radius top-radius height [-3 12 0])
-        ;  (screw-insert lastcol lastrow  bottom-radius top-radius height [-5 13 0])
-        ;  (screw-insert lastcol 0         bottom-radius top-radius height [-3 6 0])
-         (screw-insert lastcol lastrow  bottom-radius top-radius height [-4 11 0])
-         (screw-insert lastcol 0         bottom-radius top-radius height [-1 9 0])
-         (screw-insert 1 lastrow         bottom-radius top-radius height [-1 -18 0])))
+(defn screw-insert-all-shapes [bottom-radius top-radius height with-cap]
+  (union (screw-insert 0 0         bottom-radius top-radius height [6 8 0] with-cap)
+         (screw-insert 0 lastrow   bottom-radius top-radius height [-3 12 0] with-cap)
+        ;  (screw-insert lastcol lastrow  bottom-radius top-radius height [-5 13 0] with-cap)
+        ;  (screw-insert lastcol 0         bottom-radius top-radius height [-3 6 0] with-cap)
+         (screw-insert lastcol lastrow  bottom-radius top-radius height [-4 11 0] with-cap)
+         (screw-insert lastcol 0         bottom-radius top-radius height [-1 9 0] with-cap)
+         (screw-insert 1 lastrow         bottom-radius top-radius height [-1 -18 0] with-cap)))
 
 ; Hole Depth Y: 4.4
 (def screw-insert-height 4)
@@ -676,11 +676,22 @@
 ; Hole Diameter C: 4.1-4.4
 (def screw-insert-bottom-radius (/ 4.4 2))
 (def screw-insert-top-radius (/ 4.4 2))
-(def screw-insert-holes  (screw-insert-all-shapes screw-insert-bottom-radius screw-insert-top-radius screw-insert-height))
+(def screw-insert-holes (screw-insert-all-shapes screw-insert-bottom-radius screw-insert-top-radius screw-insert-height true))
 
 ; Wall Thickness W:\t1.65
-(def screw-insert-outers (screw-insert-all-shapes (+ screw-insert-bottom-radius 1.65) (+ screw-insert-top-radius 1.65) (+ screw-insert-height 1.5)))
-(def screw-insert-screw-holes  (screw-insert-all-shapes 1.7 1.7 350))
+(def screw-insert-outers (screw-insert-all-shapes (+ screw-insert-bottom-radius 1.65) (+ screw-insert-top-radius 1.65) (+ screw-insert-height 1.5) true))
+
+(def bottom-plate-height 3)
+(def screw-radius 1.8)
+(def screw-insert-screw-holes (screw-insert-all-shapes screw-radius screw-radius bottom-plate-height false))
+(def screw-insert-screw-countersink
+    (let [  screw-head-radius       3.2
+            screw-head-height       1.8
+            screw-countersink-depth 0.6]
+        (union
+            (screw-insert-all-shapes screw-head-radius screw-head-radius screw-countersink-depth false)
+            (translate [0 0 (- screw-countersink-depth 0.01)]
+                (screw-insert-all-shapes screw-head-radius screw-radius (+ screw-head-height 0.02) false)))))
 
 (def pinky-connectors
   (apply union
@@ -749,14 +760,36 @@
 
         (translate [0 0 -20] (cube 350 350 40)))))
 
+(def plate-right
+    (let [  fill            (cube 15 15 1)
+            key-holes-fill  (apply union
+                                (for [column columns
+                                    row rows
+                                    :when (or (.contains [2 3] column)
+                                            (not= row lastrow))]
+                                    (key-place column row fill)))
+            thumb-fill      (union
+                                (thumb-tr-place fill)
+                                (thumb-tl-place fill)
+                                (thumb-mr-place fill)
+                                (thumb-br-place fill)
+                                (thumb-bl-place fill))]
+    (difference
+        (translate [0 0 (/ bottom-plate-height 2)]
+            (extrude-linear {:height bottom-plate-height}
+                (projection true
+                    (union
+                        model-right
+                        key-holes-fill
+                        thumb-fill))))
+        screw-insert-screw-holes
+        screw-insert-screw-countersink)))
+
 (spit "things/right-plate.scad"
-      (write-scad
-       (cut
-        (translate [0 0 -0.1]
-                   (difference (union case-walls
-                                      pinky-walls
-                                      screw-insert-outers)
-                               (translate [0 0 -10] screw-insert-screw-holes))))))
+      (write-scad plate-right))
+
+(spit "things/left-plate.scad"
+      (write-scad (mirror [-1 0 0] plate-right)))
 
 (spit "things/test.scad"
       (write-scad
